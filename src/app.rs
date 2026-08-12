@@ -1,5 +1,21 @@
-use crate::{acer, energy, monitor::MonitorSet};
+use crate::{energy, monitor::MonitorSet};
 use eframe::egui;
+use std::sync::mpsc::{channel, Sender};
+use std::thread;
+
+pub enum DdcCommand {
+    SetBrightness(usize, u32),
+    SetContrast(usize, u32),
+    SetVolume(usize, u32),
+    SetMute(usize, bool),
+    SetPreset(usize, u8),
+    SetInput(usize, u8),
+    SetBlackBoost(usize, u32),
+    SetBlueLight(usize, u32),
+    SetOverDrive(usize, u32),
+    UnlockOSD(usize),
+    PowerOff(usize),
+}
 
 pub struct AcerMonitorApp {
     brightness: u32,
@@ -14,10 +30,66 @@ pub struct AcerMonitorApp {
     active_input: String,
     status_msg: String,
     active_pattern: Option<&'static str>,
+    cmd_tx: Sender<DdcCommand>,
 }
 
 impl Default for AcerMonitorApp {
     fn default() -> Self {
+        let (tx, rx) = channel::<DdcCommand>();
+
+        // Spawn background DDC worker thread to eliminate UI choppiness
+        thread::spawn(move || {
+            let mut monitor_set: Option<MonitorSet> = None;
+
+            while let Ok(cmd) = rx.recv() {
+                if monitor_set.is_none() {
+                    monitor_set = MonitorSet::enumerate().ok();
+                }
+
+                if let Some(set) = monitor_set.as_mut() {
+                    match cmd {
+                        DdcCommand::SetBrightness(target, val) => {
+                            let _ = exec_on_set(set, target, |m| crate::acer::brightness(m, val));
+                        }
+                        DdcCommand::SetContrast(target, val) => {
+                            let _ = exec_on_set(set, target, |m| crate::acer::contrast(m, val));
+                        }
+                        DdcCommand::SetVolume(target, val) => {
+                            let _ = exec_on_set(set, target, |m| crate::acer::volume(m, val));
+                        }
+                        DdcCommand::SetMute(target, val) => {
+                            let _ = exec_on_set(set, target, |m| crate::acer::mute(m, val));
+                        }
+                        DdcCommand::SetPreset(target, val) => {
+                            let _ = exec_on_set(set, target, |m| crate::acer::display_mode(m, val.into()));
+                        }
+                        DdcCommand::SetInput(target, val) => {
+                            let _ = exec_on_set(set, target, |m| crate::acer::input(m, val.into()));
+                        }
+
+                        DdcCommand::SetBlackBoost(target, val) => {
+                            let _ = exec_on_set(set, target, |m| crate::acer::black_boost(m, val));
+                        }
+                        DdcCommand::SetBlueLight(target, val) => {
+                            let _ = exec_on_set(set, target, |m| crate::acer::blue_light(m, val));
+                        }
+                        DdcCommand::SetOverDrive(target, val) => {
+                            let _ = exec_on_set(set, target, |m| crate::acer::overdrive(m, val));
+                        }
+                        DdcCommand::UnlockOSD(target) => {
+                            let _ = exec_on_set(set, target, |m| {
+                                let _ = crate::acer::key_lock(m, false);
+                                crate::acer::power_key(m, false)
+                            });
+                        }
+                        DdcCommand::PowerOff(target) => {
+                            let _ = exec_on_set(set, target, |m| crate::acer::power_mode(m, false));
+                        }
+                    }
+                }
+            }
+        });
+
         Self {
             brightness: 80,
             contrast: 50,
@@ -29,41 +101,57 @@ impl Default for AcerMonitorApp {
             selected_target: 0,
             active_preset: "Standard".to_string(),
             active_input: "DisplayPort".to_string(),
-            status_msg: "Ready (DDC/CI Connected)".to_string(),
+            status_msg: "60 FPS Native UI (Async I2C Enabled)".to_string(),
             active_pattern: None,
+            cmd_tx: tx,
         }
+    }
+}
+
+fn exec_on_set<F>(set: &mut MonitorSet, target: usize, mut f: F) -> Result<(), String>
+where
+    F: FnMut(&mut crate::monitor::Monitor) -> Result<(), String>,
+{
+    if target == 99 {
+        for mon in set.monitors_mut() {
+            let _ = f(mon);
+        }
+        Ok(())
+    } else {
+        let spec_str = target.to_string();
+        if let Ok(mon) = set.pick_mut_by_specifier(Some(&spec_str)) {
+            let _ = f(mon);
+        }
+        Ok(())
     }
 }
 
 impl eframe::App for AcerMonitorApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Dark Glassmorphic Theme Styling
+        // Dark Glassmorphic Visual Theme
         let mut visuals = egui::Visuals::dark();
         visuals.panel_fill = egui::Color32::from_rgb(11, 15, 25);
         visuals.window_fill = egui::Color32::from_rgb(20, 26, 42);
         visuals.widgets.active.bg_fill = egui::Color32::from_rgb(0, 229, 255);
         visuals.widgets.hovered.bg_fill = egui::Color32::from_rgb(124, 77, 255);
+        visuals.widgets.noninteractive.bg_fill = egui::Color32::from_rgb(15, 20, 32);
         ctx.set_visuals(visuals);
 
-        // Top Header Bar
+        // Top Navigation Header
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.add_space(8.0);
             ui.horizontal(|ui| {
-                ui.heading(egui::RichText::new("🖥️ Acer Monitor Control").strong().color(egui::Color32::from_rgb(0, 229, 255)));
+                ui.heading(egui::RichText::new("🖥️ Acer Monitor Control").strong().size(18.0).color(egui::Color32::from_rgb(0, 229, 255)));
                 ui.label(egui::RichText::new("Native Hardware GUI").small().color(egui::Color32::GRAY));
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui.button("🔓 Unlock OSD").clicked() {
-                        self.status_msg = "Unlocked OSD keys".to_string();
-                        let _ = with_target(self.selected_target, |mon| {
-                            let _ = acer::key_lock(mon, false);
-                            let _ = acer::power_key(mon, false);
-                            Ok(())
-                        });
+                        self.status_msg = "Sent OSD Key Unlock".to_string();
+                        let _ = self.cmd_tx.send(DdcCommand::UnlockOSD(self.selected_target));
                     }
                     if ui.button("⚡ Power Off").clicked() {
-                        self.status_msg = "Power off sent".to_string();
-                        let _ = with_target(self.selected_target, |mon| acer::power_mode(mon, false));
+                        self.status_msg = "Sent Power Off Command".to_string();
+                        let _ = self.cmd_tx.send(DdcCommand::PowerOff(self.selected_target));
                     }
                     ui.label(egui::RichText::new(&self.status_msg).small().color(egui::Color32::from_rgb(0, 230, 118)));
                 });
@@ -71,14 +159,14 @@ impl eframe::App for AcerMonitorApp {
             ui.add_space(8.0);
         });
 
-        // Main Dashboard Body
+        // Main Central Dashboard Panel
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
                 ui.add_space(10.0);
 
-                // Target Selector Tabs
+                // Target Display Selection Tabs
                 ui.horizontal(|ui| {
-                    ui.label("Target Display:");
+                    ui.label(egui::RichText::new("Target Display:").strong());
                     if ui.selectable_label(self.selected_target == 0, "Monitor 0 (VG271U)").clicked() {
                         self.selected_target = 0;
                     }
@@ -90,23 +178,23 @@ impl eframe::App for AcerMonitorApp {
                     }
                 });
 
+                ui.add_space(10.0);
                 ui.separator();
                 ui.add_space(10.0);
 
-                // Grid Layout: 2 Columns
+                // Two Column Grid Dashboard
                 ui.columns(2, |cols| {
-                    // Column 1: Brightness, Contrast, Volume & Energy
+                    // Left Column: Brightness, Contrast, Volume, Energy
                     cols[0].group(|ui| {
                         ui.heading("☀️ Brightness & Display Controls");
                         ui.add_space(6.0);
 
-                        // Brightness Slider
+                        // Brightness Slider (Instant Smooth UI Update)
                         ui.horizontal(|ui| {
                             ui.label("Brightness:");
                             let slider = ui.add(egui::Slider::new(&mut self.brightness, 0..=100).suffix("%"));
                             if slider.changed() {
-                                let b = self.brightness;
-                                let _ = with_target(self.selected_target, |mon| acer::brightness(mon, b));
+                                let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, self.brightness));
                             }
                         });
 
@@ -114,19 +202,19 @@ impl eframe::App for AcerMonitorApp {
                         ui.horizontal(|ui| {
                             if ui.button("☀️ 100%").clicked() {
                                 self.brightness = 100;
-                                let _ = with_target(self.selected_target, |mon| acer::brightness(mon, 100));
+                                let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, 100));
                             }
                             if ui.button("⚖️ 80%").clicked() {
                                 self.brightness = 80;
-                                let _ = with_target(self.selected_target, |mon| acer::brightness(mon, 80));
+                                let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, 80));
                             }
                             if ui.button("🔉 50%").clicked() {
                                 self.brightness = 50;
-                                let _ = with_target(self.selected_target, |mon| acer::brightness(mon, 50));
+                                let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, 50));
                             }
                             if ui.button("🌙 20%").clicked() {
                                 self.brightness = 20;
-                                let _ = with_target(self.selected_target, |mon| acer::brightness(mon, 20));
+                                let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, 20));
                             }
                         });
 
@@ -137,38 +225,35 @@ impl eframe::App for AcerMonitorApp {
                             ui.label("Contrast:");
                             let slider = ui.add(egui::Slider::new(&mut self.contrast, 0..=100).suffix("%"));
                             if slider.changed() {
-                                let c = self.contrast;
-                                let _ = with_target(self.selected_target, |mon| acer::contrast(mon, c));
-                            }
-                        });
-
-                        ui.add_space(10.0);
-
-                        // Volume & Mute
-                        ui.heading("🔊 Monitor Audio Volume");
-                        ui.horizontal(|ui| {
-                            let mute_btn_text = if self.is_muted { "🔇 Muted" } else { "🔊 Mute" };
-                            if ui.button(mute_btn_text).clicked() {
-                                self.is_muted = !self.is_muted;
-                                let m = self.is_muted;
-                                let _ = with_target(self.selected_target, |mon| acer::mute(mon, m));
-                            }
-                            let slider = ui.add(egui::Slider::new(&mut self.volume, 0..=100).suffix("%"));
-                            if slider.changed() {
-                                let v = self.volume;
-                                let _ = with_target(self.selected_target, |mon| acer::volume(mon, v));
+                                let _ = self.cmd_tx.send(DdcCommand::SetContrast(self.selected_target, self.contrast));
                             }
                         });
 
                         ui.add_space(12.0);
 
-                        // Real-Time Energy Calculator
+                        // Audio Volume Controls
+                        ui.heading("🔊 Monitor Audio Volume");
+                        ui.horizontal(|ui| {
+                            let mute_btn_text = if self.is_muted { "🔇 Muted" } else { "🔊 Mute" };
+                            if ui.button(mute_btn_text).clicked() {
+                                self.is_muted = !self.is_muted;
+                                let _ = self.cmd_tx.send(DdcCommand::SetMute(self.selected_target, self.is_muted));
+                            }
+                            let slider = ui.add(egui::Slider::new(&mut self.volume, 0..=100).suffix("%"));
+                            if slider.changed() {
+                                let _ = self.cmd_tx.send(DdcCommand::SetVolume(self.selected_target, self.volume));
+                            }
+                        });
+
+                        ui.add_space(14.0);
+
+                        // Real-Time Energy Meter
                         ui.heading("💡 Real-Time Power Draw");
                         let (wattage, _kwh, cost) = energy::calculate_power(self.brightness);
                         ui.label(egui::RichText::new(format!("Live Power: {:.1} W   |   Est. Yearly Cost: ${:.2}/yr", wattage, cost)).strong().color(egui::Color32::from_rgb(0, 230, 118)));
                     });
 
-                    // Column 2: OSD Modes, Inputs & Hardware Tuning
+                    // Right Column: Presets, Input Source, Gaming Tuning
                     cols[1].group(|ui| {
                         ui.heading("🎛️ Native Hardware OSD Presets");
                         ui.add_space(6.0);
@@ -176,43 +261,43 @@ impl eframe::App for AcerMonitorApp {
                         egui::Grid::new("presets_grid").num_columns(3).spacing([8.0, 8.0]).show(ui, |ui| {
                             if ui.button("⚖️ Standard").clicked() {
                                 self.active_preset = "Standard".into();
-                                let _ = with_target(self.selected_target, |mon| acer::display_mode(mon, 1));
+                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 1));
                             }
                             if ui.button("🌿 ECO Saver").clicked() {
                                 self.active_preset = "ECO".into();
-                                let _ = with_target(self.selected_target, |mon| acer::display_mode(mon, 2));
+                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 2));
                             }
                             if ui.button("⚡ HDR Mode").clicked() {
                                 self.active_preset = "HDR".into();
-                                let _ = with_target(self.selected_target, |mon| acer::display_mode(mon, 11));
+                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 11));
                             }
                             ui.end_row();
 
                             if ui.button("🎯 Action").clicked() {
                                 self.active_preset = "Action".into();
-                                let _ = with_target(self.selected_target, |mon| acer::display_mode(mon, 5));
+                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 5));
                             }
                             if ui.button("🏎️ Racing").clicked() {
                                 self.active_preset = "Racing".into();
-                                let _ = with_target(self.selected_target, |mon| acer::display_mode(mon, 6));
+                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 6));
                             }
                             if ui.button("⚽ Sports").clicked() {
                                 self.active_preset = "Sports".into();
-                                let _ = with_target(self.selected_target, |mon| acer::display_mode(mon, 7));
+                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 7));
                             }
                             ui.end_row();
 
                             if ui.button("📚 Reading").clicked() {
                                 self.active_preset = "Reading".into();
-                                let _ = with_target(self.selected_target, |mon| mon.set_vcp(0xDC, 0x02));
+                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 3));
                             }
                             if ui.button("🎬 Movie").clicked() {
                                 self.active_preset = "Movie".into();
-                                let _ = with_target(self.selected_target, |mon| mon.set_vcp(0xDC, 0x03));
+                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 4));
                             }
                             if ui.button("🎨 User Mode").clicked() {
                                 self.active_preset = "User".into();
-                                let _ = with_target(self.selected_target, |mon| acer::display_mode(mon, 0));
+                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 0));
                             }
                             ui.end_row();
                         });
@@ -224,19 +309,19 @@ impl eframe::App for AcerMonitorApp {
                         ui.horizontal(|ui| {
                             if ui.selectable_label(self.active_input == "DisplayPort", "💻 DisplayPort").clicked() {
                                 self.active_input = "DisplayPort".into();
-                                let _ = with_target(self.selected_target, |mon| acer::input(mon, 0x0F));
+                                let _ = self.cmd_tx.send(DdcCommand::SetInput(self.selected_target, 0x0F));
                             }
                             if ui.selectable_label(self.active_input == "HDMI 1", "🎮 HDMI 1").clicked() {
                                 self.active_input = "HDMI 1".into();
-                                let _ = with_target(self.selected_target, |mon| acer::input(mon, 0x11));
+                                let _ = self.cmd_tx.send(DdcCommand::SetInput(self.selected_target, 0x11));
                             }
                             if ui.selectable_label(self.active_input == "HDMI 2", "📺 HDMI 2").clicked() {
                                 self.active_input = "HDMI 2".into();
-                                let _ = with_target(self.selected_target, |mon| acer::input(mon, 0x12));
+                                let _ = self.cmd_tx.send(DdcCommand::SetInput(self.selected_target, 0x12));
                             }
                             if ui.selectable_label(self.active_input == "Auto", "🔄 Auto").clicked() {
                                 self.active_input = "Auto".into();
-                                let _ = with_target(self.selected_target, |mon| acer::input(mon, 0x01));
+                                let _ = self.cmd_tx.send(DdcCommand::SetInput(self.selected_target, 0x01));
                             }
                         });
 
@@ -248,8 +333,7 @@ impl eframe::App for AcerMonitorApp {
                             ui.label("Black Boost:");
                             let slider = ui.add(egui::Slider::new(&mut self.black_boost, 0..=10));
                             if slider.changed() {
-                                let bb = self.black_boost;
-                                let _ = with_target(self.selected_target, |mon| acer::black_boost(mon, bb));
+                                let _ = self.cmd_tx.send(DdcCommand::SetBlackBoost(self.selected_target, self.black_boost));
                             }
                         });
 
@@ -257,23 +341,23 @@ impl eframe::App for AcerMonitorApp {
                             ui.label("Blue Light:");
                             if ui.selectable_label(self.blue_light == 0, "Off").clicked() {
                                 self.blue_light = 0;
-                                let _ = with_target(self.selected_target, |mon| acer::blue_light(mon, 0));
+                                let _ = self.cmd_tx.send(DdcCommand::SetBlueLight(self.selected_target, 0));
                             }
                             if ui.selectable_label(self.blue_light == 1, "50%").clicked() {
                                 self.blue_light = 1;
-                                let _ = with_target(self.selected_target, |mon| acer::blue_light(mon, 1));
+                                let _ = self.cmd_tx.send(DdcCommand::SetBlueLight(self.selected_target, 1));
                             }
                             if ui.selectable_label(self.blue_light == 2, "60%").clicked() {
                                 self.blue_light = 2;
-                                let _ = with_target(self.selected_target, |mon| acer::blue_light(mon, 2));
+                                let _ = self.cmd_tx.send(DdcCommand::SetBlueLight(self.selected_target, 2));
                             }
                             if ui.selectable_label(self.blue_light == 3, "70%").clicked() {
                                 self.blue_light = 3;
-                                let _ = with_target(self.selected_target, |mon| acer::blue_light(mon, 3));
+                                let _ = self.cmd_tx.send(DdcCommand::SetBlueLight(self.selected_target, 3));
                             }
                             if ui.selectable_label(self.blue_light == 4, "80%").clicked() {
                                 self.blue_light = 4;
-                                let _ = with_target(self.selected_target, |mon| acer::blue_light(mon, 4));
+                                let _ = self.cmd_tx.send(DdcCommand::SetBlueLight(self.selected_target, 4));
                             }
                         });
 
@@ -281,18 +365,15 @@ impl eframe::App for AcerMonitorApp {
                             ui.label("OverDrive:");
                             if ui.selectable_label(self.overdrive == 0, "Off").clicked() {
                                 self.overdrive = 0;
-                                let _ = with_target(self.selected_target, |mon| acer::overdrive(mon, 0));
+                                let _ = self.cmd_tx.send(DdcCommand::SetOverDrive(self.selected_target, 0));
                             }
                             if ui.selectable_label(self.overdrive == 1, "Normal").clicked() {
                                 self.overdrive = 1;
-                                let _ = with_target(self.selected_target, |mon| acer::overdrive(mon, 1));
+                                let _ = self.cmd_tx.send(DdcCommand::SetOverDrive(self.selected_target, 1));
                             }
                             if ui.selectable_label(self.overdrive == 2, "Extreme").clicked() {
                                 self.overdrive = 2;
-                                let _ = with_target(self.selected_target, |mon| acer::overdrive(mon, 2));
-                            }
-                            if ui.button("🎯 Cycle AimPoint").clicked() {
-                                let _ = with_target(self.selected_target, |mon| acer::aim_type(mon, 1));
+                                let _ = self.cmd_tx.send(DdcCommand::SetOverDrive(self.selected_target, 2));
                             }
                         });
                     });
@@ -352,24 +433,5 @@ impl eframe::App for AcerMonitorApp {
                 });
             });
         });
-    }
-}
-
-fn with_target<F>(target_idx: usize, mut f: F) -> Result<(), String>
-where
-    F: FnMut(&mut crate::monitor::Monitor) -> Result<(), String>,
-{
-    let mut set = MonitorSet::enumerate()?;
-    if target_idx == 99 {
-        for mon in set.monitors_mut() {
-            let _ = f(mon);
-        }
-        Ok(())
-    } else {
-        let spec_str = target_idx.to_string();
-        if let Ok(mon) = set.pick_mut_by_specifier(Some(&spec_str)) {
-            let _ = f(mon);
-        }
-        Ok(())
     }
 }
