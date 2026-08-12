@@ -1,0 +1,7 @@
+/home/sidhant-aind/Projects/acer_monitor_gui/target/debug/deps/memmap2-638d9e75110f0a9e.d: /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memmap2-0.9.11/src/lib.rs /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memmap2-0.9.11/src/unix.rs /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memmap2-0.9.11/src/advice.rs
+
+/home/sidhant-aind/Projects/acer_monitor_gui/target/debug/deps/libmemmap2-638d9e75110f0a9e.rmeta: /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memmap2-0.9.11/src/lib.rs /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memmap2-0.9.11/src/unix.rs /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memmap2-0.9.11/src/advice.rs
+
+/home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memmap2-0.9.11/src/lib.rs:
+/home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memmap2-0.9.11/src/unix.rs:
+/home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memmap2-0.9.11/src/advice.rs:

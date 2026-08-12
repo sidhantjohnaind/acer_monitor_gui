@@ -1,0 +1,7 @@
+/home/sidhant-aind/Projects/acer_monitor_gui/target/debug/deps/ddc-ba41a31754532005.d: /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ddc-0.2.2/src/lib.rs /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ddc-0.2.2/src/commands.rs /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ddc-0.2.2/src/delay.rs
+
+/home/sidhant-aind/Projects/acer_monitor_gui/target/debug/deps/libddc-ba41a31754532005.rmeta: /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ddc-0.2.2/src/lib.rs /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ddc-0.2.2/src/commands.rs /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ddc-0.2.2/src/delay.rs
+
+/home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ddc-0.2.2/src/lib.rs:
+/home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ddc-0.2.2/src/commands.rs:
+/home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ddc-0.2.2/src/delay.rs:

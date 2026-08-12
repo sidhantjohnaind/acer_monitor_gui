@@ -1,0 +1,7 @@
+/home/sidhant-aind/Projects/acer_monitor_gui/target/debug/deps/polling-877e30e82da01b02.d: /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/polling-3.11.0/src/lib.rs /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/polling-3.11.0/src/os.rs /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/polling-3.11.0/src/epoll.rs
+
+/home/sidhant-aind/Projects/acer_monitor_gui/target/debug/deps/libpolling-877e30e82da01b02.rmeta: /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/polling-3.11.0/src/lib.rs /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/polling-3.11.0/src/os.rs /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/polling-3.11.0/src/epoll.rs
+
+/home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/polling-3.11.0/src/lib.rs:
+/home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/polling-3.11.0/src/os.rs:
+/home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/polling-3.11.0/src/epoll.rs:

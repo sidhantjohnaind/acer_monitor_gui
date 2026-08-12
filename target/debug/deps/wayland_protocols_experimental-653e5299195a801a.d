@@ -1,0 +1,6 @@
+/home/sidhant-aind/Projects/acer_monitor_gui/target/debug/deps/wayland_protocols_experimental-653e5299195a801a.d: /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-experimental-20250721.0.1/src/lib.rs /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-experimental-20250721.0.1/src/protocol_macro.rs
+
+/home/sidhant-aind/Projects/acer_monitor_gui/target/debug/deps/libwayland_protocols_experimental-653e5299195a801a.rmeta: /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-experimental-20250721.0.1/src/lib.rs /home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-experimental-20250721.0.1/src/protocol_macro.rs
+
+/home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-experimental-20250721.0.1/src/lib.rs:
+/home/sidhant-aind/Downloads/Antigravity\ IDE\ (1)/Antigravity\ IDE/data/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-experimental-20250721.0.1/src/protocol_macro.rs:

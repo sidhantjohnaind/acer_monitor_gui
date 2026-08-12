@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acer Monitor Control Dashboard</title>
+  <link rel="stylesheet" href="index.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Header -->
+    <header class="top-header">
+      <div class="brand">
+        <div class="logo-icon">🖥️</div>
+        <div class="brand-text">
+          <h1>Acer Monitor Control <span>GUI</span></h1>
+          <p class="subtitle">Hardware DDC/CI & VCP Display Suite</p>
+        </div>
+      </div>
+
+      <!-- Monitor Tabs -->
+      <div class="monitor-tabs">
+        <button class="tab-btn active" data-spec="0">
+          <span class="tab-dot"></span> Monitor 0 (VG271U)
+        </button>
+        <button class="tab-btn" data-spec="1">
+          <span class="tab-dot"></span> Monitor 1 (Secondary)
+        </button>
+        <button class="tab-btn" data-spec="all">
+          ⚡ All Monitors
+        </button>
+      </div>
+
+      <!-- Top Action Controls -->
+      <div class="header-actions">
+        <div class="status-badge connected">
+          <span class="pulse-dot"></span> DDC/CI Connected
+        </div>
+        <button class="btn btn-icon" id="btnPower" title="Power Toggle">
+          ⚡ Power
+        </button>
+        <button class="btn btn-secondary" id="btnUnlock" title="Emergency Unlock OSD">
+          🔓 Unlock OSD
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Dashboard -->
+    <main class="dashboard-grid">
+      
+      <!-- Card 1: Brightness & Display Controls -->
+      <section class="card card-hero">
+        <div class="card-header">
+          <h2>☀️ Display Brightness & Contrast</h2>
+          <span class="badge">VCP 0x10 / 0x12</span>
+        </div>
+
+        <div class="brightness-dial-container">
+          <div class="dial-outer">
+            <div class="dial-value" id="brightnessValue">80%</div>
+            <div class="dial-label">BRIGHTNESS</div>
+          </div>
+          <div class="quick-presets">
+            <button class="btn-preset-pill" data-val="100">☀️ 100%</button>
+            <button class="btn-preset-pill active" data-val="80">⚖️ 80%</button>
+            <button class="btn-preset-pill" data-val="50">🔉 50%</button>
+            <button class="btn-preset-pill" data-val="20">🌙 20%</button>
+          </div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <label for="sliderBrightness">Brightness Level</label>
+            <span class="val-readout" id="readoutBrightness">80%</span>
+          </div>
+          <input type="range" id="sliderBrightness" min="0" max="100" value="80" class="custom-slider">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <label for="sliderContrast">Contrast Level</label>
+            <span class="val-readout" id="readoutContrast">50%</span>
+          </div>
+          <input type="range" id="sliderContrast" min="0" max="100" value="50" class="custom-slider contrast-slider">
+        </div>
+
+        <!-- Fade Transition Controller -->
+        <div class="fade-row">
+          <div class="fade-info">
+            <span class="fade-title">🌊 Smooth Parameter Fade</span>
+            <span class="fade-sub">Transition values over custom duration</span>
+          </div>
+          <div class="fade-inputs">
+            <input type="number" id="fadeDuration" value="2000" min="200" step="100" class="num-input"> ms
+            <button class="btn btn-primary btn-sm" id="btnTriggerFade">Start Fade</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card 2: Audio & Volume -->
+      <section class="card">
+        <div class="card-header">
+          <h2>🔊 Monitor Audio Volume</h2>
+          <span class="badge">VCP 0x62 / 0x8D</span>
+        </div>
+
+        <div class="volume-container">
+          <button class="btn-mute-circle" id="btnMute">
+            <span class="mute-icon" id="muteIcon">🔊</span>
+          </button>
+          <div class="volume-slider-box">
+            <div class="slider-header">
+              <label for="sliderVolume">Volume Output</label>
+              <span class="val-readout" id="readoutVolume">50%</span>
+            </div>
+            <input type="range" id="sliderVolume" min="0" max="100" value="50" class="custom-slider volume-slider">
+          </div>
+        </div>
+      </section>
+
+      <!-- Card 3: Hardware OSD Modes & Presets -->
+      <section class="card card-wide">
+        <div class="card-header">
+          <h2>🎛️ Native Hardware OSD Modes</h2>
+          <span class="badge">Banked VCP 0xE2</span>
+        </div>
+
+        <div class="presets-grid">
+          <div class="preset-card active" data-preset="standard">
+            <div class="preset-icon">⚖️</div>
+            <div class="preset-title">Standard Mode</div>
+            <div class="preset-desc">Balanced color accuracy & contrast</div>
+          </div>
+
+          <div class="preset-card" data-preset="eco">
+            <div class="preset-icon">🌿</div>
+            <div class="preset-title">ECO Power Saver</div>
+            <div class="preset-desc">Optimized energy savings</div>
+          </div>
+
+          <div class="preset-card" data-preset="hdr">
+            <div class="preset-icon">⚡</div>
+            <div class="preset-title">HDR Game Mode</div>
+            <div class="preset-desc">High dynamic range & wide gamut</div>
+          </div>
+
+          <div class="preset-card" data-preset="action">
+            <div class="preset-icon">🎯</div>
+            <div class="preset-title">Action Gaming</div>
+            <div class="preset-desc">Ultra-fast response & dark clarity</div>
+          </div>
+
+          <div class="preset-card" data-preset="racing">
+            <div class="preset-icon">🏎️</div>
+            <div class="preset-title">Racing Mode</div>
+            <div class="preset-desc">Motion clarity & extreme overdrive</div>
+          </div>
+
+          <div class="preset-card" data-preset="sports">
+            <div class="preset-icon">⚽</div>
+            <div class="preset-title">Sports Mode</div>
+            <div class="preset-desc">Vibrant colors & sharp motion</div>
+          </div>
+
+          <div class="preset-card" data-preset="reading">
+            <div class="preset-icon">📚</div>
+            <div class="preset-title">Reading / Text</div>
+            <div class="preset-desc">Warm paper tint & zero flicker</div>
+          </div>
+
+          <div class="preset-card" data-preset="movie">
+            <div class="preset-icon">🎬</div>
+            <div class="preset-title">Movie / Cinema</div>
+            <div class="preset-desc">Deep blacks & rich cinematic tones</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card 4: Input Source Switcher -->
+      <section class="card">
+        <div class="card-header">
+          <h2>🔌 Active Input Source</h2>
+          <span class="badge">VCP 0x60</span>
+        </div>
+
+        <div class="input-grid">
+          <button class="input-btn active" data-input="dp">
+            <span class="input-icon">💻</span> DisplayPort
+          </button>
+          <button class="input-btn" data-input="hdmi1">
+            <span class="input-icon">🎮</span> HDMI 1
+          </button>
+          <button class="input-btn" data-input="hdmi2">
+            <span class="input-icon">📺</span> HDMI 2
+          </button>
+          <button class="input-btn" data-input="auto">
+            <span class="input-icon">🔄</span> Auto Switch
+          </button>
+        </div>
+      </section>
+
+      <!-- Card 5: Gaming & Vision Hardware Tuning -->
+      <section class="card">
+        <div class="card-header">
+          <h2>🎮 Gaming & Vision Hardware Tuning</h2>
+          <span class="badge">Acer Banked VCP</span>
+        </div>
+
+        <!-- Black Boost -->
+        <div class="tuning-block">
+          <div class="slider-header">
+            <label for="sliderBlackBoost">Black Boost (Shadow Details)</label>
+            <span class="val-readout" id="readoutBlackBoost">Level 5</span>
+          </div>
+          <input type="range" id="sliderBlackBoost" min="0" max="10" value="5" class="custom-slider">
+        </div>
+
+        <!-- Blue Light Filter -->
+        <div class="tuning-block">
+          <label class="block-label">Eye Care Blue Light Filter</label>
+          <div class="bluelight-pills">
+            <button class="pill-btn active" data-bluelight="0">Off (0%)</button>
+            <button class="pill-btn" data-bluelight="50">50%</button>
+            <button class="pill-btn" data-bluelight="60">60%</button>
+            <button class="pill-btn" data-bluelight="70">70%</button>
+            <button class="pill-btn" data-bluelight="80">80%</button>
+          </div>
+        </div>
+
+        <!-- OverDrive & AimPoint -->
+        <div class="tuning-row">
+          <div class="sub-block">
+            <label class="block-label">Hardware OverDrive</label>
+            <div class="toggle-group">
+              <button class="toggle-btn" data-od="0">Off</button>
+              <button class="toggle-btn" data-od="1">Normal</button>
+              <button class="toggle-btn active" data-od="2">Extreme</button>
+            </div>
+          </div>
+
+          <div class="sub-block">
+            <label class="block-label">AimPoint Crosshair</label>
+            <button class="btn btn-secondary w-full" id="btnCycleAim">🎯 Cycle Crosshairs</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card 6: Solar Schedule & Idle Dimmer -->
+      <section class="card">
+        <div class="card-header">
+          <h2>☀️ Solar Schedule & Smart Idle</h2>
+          <span class="badge">Circadian & MPRIS</span>
+        </div>
+
+        <div class="solar-box">
+          <div class="location-inputs">
+            <div class="input-field">
+              <label>Latitude</label>
+              <input type="number" id="solarLat" value="28.61" step="0.01">
+            </div>
+            <div class="input-field">
+              <label>Longitude</label>
+              <input type="number" id="solarLon" value="77.20" step="0.01">
+            </div>
+          </div>
+
+          <div class="solar-actions">
+            <button class="btn btn-solar-day" id="btnSolarDay">☀️ Apply Day Mode</button>
+            <button class="btn btn-solar-night" id="btnSolarNight">🌙 Apply Night Mode</button>
+          </div>
+        </div>
+
+        <div class="idle-box">
+          <div class="idle-header">
+            <span>🌙 Smart Idle Dimmer Daemon</span>
+            <span class="status-pill active">MPRIS Inhibit Active</span>
+          </div>
+          <div class="idle-controls">
+            <label>Idle Seconds: <strong id="idleTimeReadout">300s</strong></label>
+            <input type="range" id="sliderIdleSecs" min="60" max="1800" step="60" value="300" class="custom-slider">
+          </div>
+        </div>
+      </section>
+
+      <!-- Card 7: Real-Time Power & Energy Meter -->
+      <section class="card">
+        <div class="card-header">
+          <h2>💡 Live Power & Energy Meter</h2>
+          <span class="badge">Real-Time DDC</span>
+        </div>
+
+        <div class="energy-meter-grid">
+          <div class="energy-stat">
+            <div class="stat-value" id="statWattage">15.2 <small>W</small></div>
+            <div class="stat-label">Live Power Draw</div>
+          </div>
+          <div class="energy-stat">
+            <div class="stat-value" id="statYearlyCost">$6.68 <small>/yr</small></div>
+            <div class="stat-label">Est. Yearly Cost</div>
+          </div>
+        </div>
+
+        <div class="efficiency-bar-container">
+          <div class="efficiency-bar" id="efficiencyBar" style="width: 45%;"></div>
+        </div>
+      </div>
+      </section>
+
+      <!-- Card 8: Diagnostic Test Pattern Generator -->
+      <section class="card card-wide">
+        <div class="card-header">
+          <h2>🎨 Diagnostic Test Pattern Generator</h2>
+          <span class="badge">Hardware Verification</span>
+        </div>
+
+        <div class="pattern-toolbar">
+          <button class="btn btn-pattern" data-pattern="grid">📐 Alignment Grid</button>
+          <button class="btn btn-pattern" data-pattern="gradient">📈 Step Gradient</button>
+          <button class="btn btn-pattern" data-pattern="red">🔴 Pure Red</button>
+          <button class="btn btn-pattern" data-pattern="green">🟢 Pure Green</button>
+          <button class="btn btn-pattern" data-pattern="blue">🔵 Pure Blue</button>
+          <button class="btn btn-pattern" data-pattern="white">⚪ Pure White</button>
+          <button class="btn btn-pattern" data-pattern="black">⬛ Pure Black</button>
+        </div>
+
+        <div class="pattern-preview-box">
+          <canvas id="patternCanvas" width="800" height="240"></canvas>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
