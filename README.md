@@ -27,26 +27,29 @@
 
 ---
 
-## 📦 Installation & Running
+## 📦 Installation & Standalone Packages
 
-### Linux
+### 🐧 Linux (AppImage & Native Build)
 
-Ensure `i2c-dev` kernel module is loaded:
+Download the portable **AppImage** (runs on any Linux distro without installation):
 ```bash
-sudo modprobe i2c-dev
+chmod +x Acer_Monitor_GUI-x86_64.AppImage
+./Acer_Monitor_GUI-x86_64.AppImage
 ```
 
-Run native GUI app:
+Or build from source:
 ```bash
+sudo modprobe i2c-dev
 cargo run --release
 ```
 
-### Windows
+### 🪟 Windows (Standalone `.exe` Installer / Executable)
 
-Run native GUI app in PowerShell:
+Download and run `acer_monitor_gui.exe` directly, or build via PowerShell:
 ```powershell
 cargo run --release
 ```
+
 
 ### Cross-Compiling
 
