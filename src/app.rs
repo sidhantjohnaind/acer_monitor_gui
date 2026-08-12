@@ -216,6 +216,7 @@ impl eframe::App for AcerMonitorApp {
                                 ui.label(egui::RichText::new("Brightness Level").small().color(Color32::GRAY));
                                 let slider = ui.add(egui::Slider::new(&mut self.brightness, 0..=100).suffix("%"));
                                 if slider.changed() {
+                                    self.active_preset = "User".to_string();
                                     let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, self.brightness));
                                 }
 
@@ -223,18 +224,22 @@ impl eframe::App for AcerMonitorApp {
                                 ui.horizontal(|ui| {
                                     if ui.small_button("☀️ 100%").clicked() {
                                         self.brightness = 100;
+                                        self.active_preset = "User".to_string();
                                         let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, 100));
                                     }
                                     if ui.small_button("⚖️ 80%").clicked() {
                                         self.brightness = 80;
+                                        self.active_preset = "User".to_string();
                                         let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, 80));
                                     }
                                     if ui.small_button("🔉 50%").clicked() {
                                         self.brightness = 50;
+                                        self.active_preset = "User".to_string();
                                         let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, 50));
                                     }
                                     if ui.small_button("🌙 20%").clicked() {
                                         self.brightness = 20;
+                                        self.active_preset = "User".to_string();
                                         let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, 20));
                                     }
                                 });
@@ -248,6 +253,7 @@ impl eframe::App for AcerMonitorApp {
                             ui.label(egui::RichText::new("Contrast:").strong());
                             let slider = ui.add(egui::Slider::new(&mut self.contrast, 0..=100).suffix("%"));
                             if slider.changed() {
+                                self.active_preset = "User".to_string();
                                 let _ = self.cmd_tx.send(DdcCommand::SetContrast(self.selected_target, self.contrast));
                             }
                         });
@@ -336,6 +342,7 @@ impl eframe::App for AcerMonitorApp {
                             ui.label("Black Boost:");
                             let slider = ui.add(egui::Slider::new(&mut self.black_boost, 0..=10));
                             if slider.changed() {
+                                self.active_preset = "User".to_string();
                                 let _ = self.cmd_tx.send(DdcCommand::SetBlackBoost(self.selected_target, self.black_boost));
                             }
                         });
@@ -344,22 +351,27 @@ impl eframe::App for AcerMonitorApp {
                             ui.label("Blue Light Filter:");
                             if ui.selectable_label(self.blue_light == 0, "Off").clicked() {
                                 self.blue_light = 0;
+                                self.active_preset = "User".to_string();
                                 let _ = self.cmd_tx.send(DdcCommand::SetBlueLight(self.selected_target, 0));
                             }
                             if ui.selectable_label(self.blue_light == 1, "50%").clicked() {
                                 self.blue_light = 1;
+                                self.active_preset = "User".to_string();
                                 let _ = self.cmd_tx.send(DdcCommand::SetBlueLight(self.selected_target, 1));
                             }
                             if ui.selectable_label(self.blue_light == 2, "60%").clicked() {
                                 self.blue_light = 2;
+                                self.active_preset = "User".to_string();
                                 let _ = self.cmd_tx.send(DdcCommand::SetBlueLight(self.selected_target, 2));
                             }
                             if ui.selectable_label(self.blue_light == 3, "70%").clicked() {
                                 self.blue_light = 3;
+                                self.active_preset = "User".to_string();
                                 let _ = self.cmd_tx.send(DdcCommand::SetBlueLight(self.selected_target, 3));
                             }
                             if ui.selectable_label(self.blue_light == 4, "80%").clicked() {
                                 self.blue_light = 4;
+                                self.active_preset = "User".to_string();
                                 let _ = self.cmd_tx.send(DdcCommand::SetBlueLight(self.selected_target, 4));
                             }
                         });
@@ -368,17 +380,21 @@ impl eframe::App for AcerMonitorApp {
                             ui.label("OverDrive Mode:");
                             if ui.selectable_label(self.overdrive == 0, "Off").clicked() {
                                 self.overdrive = 0;
+                                self.active_preset = "User".to_string();
                                 let _ = self.cmd_tx.send(DdcCommand::SetOverDrive(self.selected_target, 0));
                             }
                             if ui.selectable_label(self.overdrive == 1, "Normal").clicked() {
                                 self.overdrive = 1;
+                                self.active_preset = "User".to_string();
                                 let _ = self.cmd_tx.send(DdcCommand::SetOverDrive(self.selected_target, 1));
                             }
                             if ui.selectable_label(self.overdrive == 2, "Extreme").clicked() {
                                 self.overdrive = 2;
+                                self.active_preset = "User".to_string();
                                 let _ = self.cmd_tx.send(DdcCommand::SetOverDrive(self.selected_target, 2));
                             }
                         });
+
                     });
                 });
 
