@@ -60,6 +60,23 @@ cargo build --release --target aarch64-unknown-linux-gnu
 
 ---
 
+## 🗑️ Uninstallation
+
+To completely remove the application and its desktop shortcuts from your system:
+
+### Linux / macOS
+```bash
+./uninstall.sh
+```
+
+### Windows (PowerShell)
+```powershell
+.\uninstall.ps1
+```
+
+---
+
 ## 📄 License
 
 Licensed under the [MIT License](LICENSE).
+
