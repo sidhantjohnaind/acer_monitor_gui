@@ -1,5 +1,5 @@
 use crate::{energy, monitor::MonitorSet};
-use eframe::egui;
+use eframe::egui::{self, Color32, Pos2, Stroke, Vec2};
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
 
@@ -37,7 +37,7 @@ impl Default for AcerMonitorApp {
     fn default() -> Self {
         let (tx, rx) = channel::<DdcCommand>();
 
-        // Spawn background DDC worker thread to eliminate UI choppiness
+        // Spawn background DDC worker thread for zero UI latency
         thread::spawn(move || {
             let mut monitor_set: Option<MonitorSet> = None;
 
@@ -66,7 +66,6 @@ impl Default for AcerMonitorApp {
                         DdcCommand::SetInput(target, val) => {
                             let _ = exec_on_set(set, target, |m| crate::acer::input(m, val.into()));
                         }
-
                         DdcCommand::SetBlackBoost(target, val) => {
                             let _ = exec_on_set(set, target, |m| crate::acer::black_boost(m, val));
                         }
@@ -101,7 +100,7 @@ impl Default for AcerMonitorApp {
             selected_target: 0,
             active_preset: "Standard".to_string(),
             active_input: "DisplayPort".to_string(),
-            status_msg: "60 FPS Native UI (Async I2C Enabled)".to_string(),
+            status_msg: "Hyper-Aesthetic Native UI Ready".to_string(),
             active_pattern: None,
             cmd_tx: tx,
         }
@@ -128,45 +127,57 @@ where
 
 impl eframe::App for AcerMonitorApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Dark Glassmorphic Visual Theme
+        // Ultra-Modern Dark Theme & Custom Rounding
         let mut visuals = egui::Visuals::dark();
-        visuals.panel_fill = egui::Color32::from_rgb(11, 15, 25);
-        visuals.window_fill = egui::Color32::from_rgb(20, 26, 42);
-        visuals.widgets.active.bg_fill = egui::Color32::from_rgb(0, 229, 255);
-        visuals.widgets.hovered.bg_fill = egui::Color32::from_rgb(124, 77, 255);
-        visuals.widgets.noninteractive.bg_fill = egui::Color32::from_rgb(15, 20, 32);
+        visuals.panel_fill = Color32::from_rgb(8, 12, 20);
+        visuals.window_fill = Color32::from_rgb(16, 24, 40);
+        
+        visuals.window_rounding = 16.0.into();
+        visuals.menu_rounding = 12.0.into();
+        visuals.widgets.noninteractive.rounding = 12.0.into();
+        visuals.widgets.inactive.rounding = 10.0.into();
+        visuals.widgets.hovered.rounding = 10.0.into();
+        visuals.widgets.active.rounding = 10.0.into();
+
+        visuals.widgets.inactive.bg_fill = Color32::from_rgb(22, 32, 52);
+        visuals.widgets.inactive.bg_stroke = Stroke::new(1.0, Color32::from_rgba_unmultiplied(255, 255, 255, 20));
+        
+        visuals.widgets.hovered.bg_fill = Color32::from_rgb(32, 48, 76);
+        visuals.widgets.hovered.bg_stroke = Stroke::new(1.5, Color32::from_rgb(0, 229, 255));
+        
+        visuals.widgets.active.bg_fill = Color32::from_rgb(0, 229, 255);
+        visuals.widgets.active.fg_stroke = Stroke::new(1.5, Color32::BLACK);
+
         ctx.set_visuals(visuals);
 
         // Top Navigation Header
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            ui.add_space(8.0);
+        egui::TopBottomPanel::top("top_panel").frame(egui::Frame::none().fill(Color32::from_rgb(12, 18, 30)).inner_margin(12.0)).show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.heading(egui::RichText::new("🖥️ Acer Monitor Control").strong().size(18.0).color(egui::Color32::from_rgb(0, 229, 255)));
-                ui.label(egui::RichText::new("Native Hardware GUI").small().color(egui::Color32::GRAY));
+                ui.heading(egui::RichText::new("🖥️ Acer Monitor Control").strong().size(20.0).color(Color32::from_rgb(0, 229, 255)));
+                ui.label(egui::RichText::new("NATIVE HARDWARE GUI").small().strong().color(Color32::from_rgb(124, 77, 255)));
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button("🔓 Unlock OSD").clicked() {
+                    if ui.add(egui::Button::new("🔓 Unlock OSD").fill(Color32::from_rgb(30, 40, 60))).clicked() {
                         self.status_msg = "Sent OSD Key Unlock".to_string();
                         let _ = self.cmd_tx.send(DdcCommand::UnlockOSD(self.selected_target));
                     }
-                    if ui.button("⚡ Power Off").clicked() {
+                    if ui.add(egui::Button::new("⚡ Power Off").fill(Color32::from_rgb(60, 25, 25))).clicked() {
                         self.status_msg = "Sent Power Off Command".to_string();
                         let _ = self.cmd_tx.send(DdcCommand::PowerOff(self.selected_target));
                     }
-                    ui.label(egui::RichText::new(&self.status_msg).small().color(egui::Color32::from_rgb(0, 230, 118)));
+                    ui.label(egui::RichText::new(&self.status_msg).small().color(Color32::from_rgb(0, 230, 118)));
                 });
             });
-            ui.add_space(8.0);
         });
 
-        // Main Central Dashboard Panel
+        // Main Dashboard Body
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
-                ui.add_space(10.0);
+                ui.add_space(8.0);
 
-                // Target Display Selection Tabs
+                // Target Display Selection Bar
                 ui.horizontal(|ui| {
-                    ui.label(egui::RichText::new("Target Display:").strong());
+                    ui.label(egui::RichText::new("Target Display:").strong().color(Color32::from_rgb(200, 210, 230)));
                     if ui.selectable_label(self.selected_target == 0, "Monitor 0 (VG271U)").clicked() {
                         self.selected_target = 0;
                     }
@@ -178,61 +189,74 @@ impl eframe::App for AcerMonitorApp {
                     }
                 });
 
-                ui.add_space(10.0);
-                ui.separator();
-                ui.add_space(10.0);
+                ui.add_space(8.0);
 
-                // Two Column Grid Dashboard
+                // Two Column Modern Grid Layout
                 ui.columns(2, |cols| {
                     // Left Column: Brightness, Contrast, Volume, Energy
                     cols[0].group(|ui| {
-                        ui.heading("☀️ Brightness & Display Controls");
-                        ui.add_space(6.0);
-
-                        // Brightness Slider (Instant Smooth UI Update)
-                        ui.horizontal(|ui| {
-                            ui.label("Brightness:");
-                            let slider = ui.add(egui::Slider::new(&mut self.brightness, 0..=100).suffix("%"));
-                            if slider.changed() {
-                                let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, self.brightness));
-                            }
-                        });
-
-                        // Quick Brightness Presets
-                        ui.horizontal(|ui| {
-                            if ui.button("☀️ 100%").clicked() {
-                                self.brightness = 100;
-                                let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, 100));
-                            }
-                            if ui.button("⚖️ 80%").clicked() {
-                                self.brightness = 80;
-                                let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, 80));
-                            }
-                            if ui.button("🔉 50%").clicked() {
-                                self.brightness = 50;
-                                let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, 50));
-                            }
-                            if ui.button("🌙 20%").clicked() {
-                                self.brightness = 20;
-                                let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, 20));
-                            }
-                        });
-
+                        ui.heading(egui::RichText::new("☀️ Display Controls").strong().color(Color32::from_rgb(0, 229, 255)));
                         ui.add_space(10.0);
+
+                        // Brightness Ring & Slider Box
+                        ui.horizontal(|ui| {
+                            // Paint Interactive Circular Ring Dial
+                            let (response, painter) = ui.allocate_painter(Vec2::new(70.0, 70.0), egui::Sense::hover());
+                            let center = response.rect.center();
+                            let radius = 30.0;
+                            
+                            // Background Ring
+                            painter.circle_stroke(center, radius, Stroke::new(4.0, Color32::from_rgb(30, 42, 65)));
+                            // Foreground Glowing Arc
+                            painter.circle_stroke(center, radius, Stroke::new(4.0, Color32::from_rgb(0, 229, 255)));
+                            // Center Value Text
+                            painter.text(center, egui::Align2::CENTER_CENTER, format!("{}%", self.brightness), egui::FontId::proportional(16.0), Color32::from_rgb(0, 229, 255));
+
+                            ui.vertical(|ui| {
+                                ui.label(egui::RichText::new("Brightness Level").small().color(Color32::GRAY));
+                                let slider = ui.add(egui::Slider::new(&mut self.brightness, 0..=100).suffix("%"));
+                                if slider.changed() {
+                                    let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, self.brightness));
+                                }
+
+                                // Quick Brightness Preset Pills
+                                ui.horizontal(|ui| {
+                                    if ui.small_button("☀️ 100%").clicked() {
+                                        self.brightness = 100;
+                                        let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, 100));
+                                    }
+                                    if ui.small_button("⚖️ 80%").clicked() {
+                                        self.brightness = 80;
+                                        let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, 80));
+                                    }
+                                    if ui.small_button("🔉 50%").clicked() {
+                                        self.brightness = 50;
+                                        let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, 50));
+                                    }
+                                    if ui.small_button("🌙 20%").clicked() {
+                                        self.brightness = 20;
+                                        let _ = self.cmd_tx.send(DdcCommand::SetBrightness(self.selected_target, 20));
+                                    }
+                                });
+                            });
+                        });
+
+                        ui.add_space(12.0);
 
                         // Contrast Slider
                         ui.horizontal(|ui| {
-                            ui.label("Contrast:");
+                            ui.label(egui::RichText::new("Contrast:").strong());
                             let slider = ui.add(egui::Slider::new(&mut self.contrast, 0..=100).suffix("%"));
                             if slider.changed() {
                                 let _ = self.cmd_tx.send(DdcCommand::SetContrast(self.selected_target, self.contrast));
                             }
                         });
 
-                        ui.add_space(12.0);
+                        ui.add_space(14.0);
 
                         // Audio Volume Controls
-                        ui.heading("🔊 Monitor Audio Volume");
+                        ui.heading(egui::RichText::new("🔊 Monitor Audio Output").strong().color(Color32::from_rgb(124, 77, 255)));
+                        ui.add_space(6.0);
                         ui.horizontal(|ui| {
                             let mute_btn_text = if self.is_muted { "🔇 Muted" } else { "🔊 Mute" };
                             if ui.button(mute_btn_text).clicked() {
@@ -245,62 +269,44 @@ impl eframe::App for AcerMonitorApp {
                             }
                         });
 
-                        ui.add_space(14.0);
+                        ui.add_space(16.0);
 
-                        // Real-Time Energy Meter
-                        ui.heading("💡 Real-Time Power Draw");
+                        // Real-Time Energy Calculator
+                        ui.heading(egui::RichText::new("💡 Real-Time Energy Meter").strong().color(Color32::from_rgb(0, 230, 118)));
+                        ui.add_space(4.0);
                         let (wattage, _kwh, cost) = energy::calculate_power(self.brightness);
-                        ui.label(egui::RichText::new(format!("Live Power: {:.1} W   |   Est. Yearly Cost: ${:.2}/yr", wattage, cost)).strong().color(egui::Color32::from_rgb(0, 230, 118)));
+                        ui.label(egui::RichText::new(format!("Live Power: {:.1} W   |   Est. Yearly Cost: ${:.2}/yr", wattage, cost)).strong().size(14.0).color(Color32::from_rgb(0, 230, 118)));
                     });
 
                     // Right Column: Presets, Input Source, Gaming Tuning
                     cols[1].group(|ui| {
-                        ui.heading("🎛️ Native Hardware OSD Presets");
-                        ui.add_space(6.0);
+                        ui.horizontal(|ui| {
+                            ui.heading(egui::RichText::new("🎛️ Native Hardware Presets").strong().color(Color32::from_rgb(0, 229, 255)));
+                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                ui.label(egui::RichText::new(format!("Active: {}", self.active_preset)).strong().color(Color32::from_rgb(0, 230, 118)));
+                            });
+                        });
+                        ui.add_space(8.0);
 
                         egui::Grid::new("presets_grid").num_columns(4).spacing([8.0, 8.0]).show(ui, |ui| {
-                            if ui.button("⚖️ Standard").clicked() {
-                                self.active_preset = "Standard".into();
-                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 1));
-                            }
-                            if ui.button("🌿 ECO Saver").clicked() {
-                                self.active_preset = "ECO".into();
-                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 2));
-                            }
-                            if ui.button("🎨 Graphics").clicked() {
-                                self.active_preset = "Graphics".into();
-                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 3));
-                            }
-                            if ui.button("⚡ HDR Mode").clicked() {
-                                self.active_preset = "HDR".into();
-                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 11));
-                            }
+                            render_preset_btn(ui, "User", "👤", 0, &mut self.active_preset, &self.cmd_tx, self.selected_target);
+                            render_preset_btn(ui, "Standard", "⚖️", 1, &mut self.active_preset, &self.cmd_tx, self.selected_target);
+                            render_preset_btn(ui, "ECO", "🌿", 2, &mut self.active_preset, &self.cmd_tx, self.selected_target);
+                            render_preset_btn(ui, "Graphics", "🎨", 3, &mut self.active_preset, &self.cmd_tx, self.selected_target);
                             ui.end_row();
 
-                            if ui.button("🎯 Action").clicked() {
-                                self.active_preset = "Action".into();
-                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 5));
-                            }
-                            if ui.button("🏎️ Racing").clicked() {
-                                self.active_preset = "Racing".into();
-                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 6));
-                            }
-                            if ui.button("⚽ Sports").clicked() {
-                                self.active_preset = "Sports".into();
-                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 7));
-                            }
-                            if ui.button("👤 User Mode").clicked() {
-                                self.active_preset = "User".into();
-                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 0));
-                            }
+                            render_preset_btn(ui, "Action", "🎯", 5, &mut self.active_preset, &self.cmd_tx, self.selected_target);
+                            render_preset_btn(ui, "Racing", "🏎️", 6, &mut self.active_preset, &self.cmd_tx, self.selected_target);
+                            render_preset_btn(ui, "Sports", "⚽", 7, &mut self.active_preset, &self.cmd_tx, self.selected_target);
+                            render_preset_btn(ui, "HDR Mode", "⚡", 11, &mut self.active_preset, &self.cmd_tx, self.selected_target);
                             ui.end_row();
                         });
 
-
-                        ui.add_space(10.0);
+                        ui.add_space(14.0);
 
                         // Input Source Switcher
-                        ui.heading("🔌 Active Input Source");
+                        ui.heading(egui::RichText::new("🔌 Active Input Source").strong().color(Color32::from_rgb(124, 77, 255)));
+                        ui.add_space(6.0);
                         ui.horizontal(|ui| {
                             if ui.selectable_label(self.active_input == "DisplayPort", "💻 DisplayPort").clicked() {
                                 self.active_input = "DisplayPort".into();
@@ -320,10 +326,12 @@ impl eframe::App for AcerMonitorApp {
                             }
                         });
 
-                        ui.add_space(10.0);
+                        ui.add_space(14.0);
 
                         // Gaming & Vision Hardware Tuning
-                        ui.heading("🎮 Gaming & Vision Tuning");
+                        ui.heading(egui::RichText::new("🎮 Gaming & Vision Tuning").strong().color(Color32::from_rgb(255, 145, 0)));
+                        ui.add_space(6.0);
+
                         ui.horizontal(|ui| {
                             ui.label("Black Boost:");
                             let slider = ui.add(egui::Slider::new(&mut self.black_boost, 0..=10));
@@ -333,7 +341,7 @@ impl eframe::App for AcerMonitorApp {
                         });
 
                         ui.horizontal(|ui| {
-                            ui.label("Blue Light:");
+                            ui.label("Blue Light Filter:");
                             if ui.selectable_label(self.blue_light == 0, "Off").clicked() {
                                 self.blue_light = 0;
                                 let _ = self.cmd_tx.send(DdcCommand::SetBlueLight(self.selected_target, 0));
@@ -357,7 +365,7 @@ impl eframe::App for AcerMonitorApp {
                         });
 
                         ui.horizontal(|ui| {
-                            ui.label("OverDrive:");
+                            ui.label("OverDrive Mode:");
                             if ui.selectable_label(self.overdrive == 0, "Off").clicked() {
                                 self.overdrive = 0;
                                 let _ = self.cmd_tx.send(DdcCommand::SetOverDrive(self.selected_target, 0));
@@ -374,12 +382,12 @@ impl eframe::App for AcerMonitorApp {
                     });
                 });
 
-                ui.add_space(14.0);
-                ui.separator();
+                ui.add_space(12.0);
 
                 // Diagnostic Test Pattern Generator Canvas
                 ui.group(|ui| {
-                    ui.heading("🎨 Diagnostic Test Pattern Canvas");
+                    ui.heading(egui::RichText::new("🎨 Diagnostic Test Pattern Canvas").strong().color(Color32::from_rgb(0, 229, 255)));
+                    ui.add_space(4.0);
                     ui.horizontal(|ui| {
                         if ui.button("📐 Grid").clicked() { self.active_pattern = Some("grid"); }
                         if ui.button("📈 Gradient").clicked() { self.active_pattern = Some("gradient"); }
@@ -391,23 +399,23 @@ impl eframe::App for AcerMonitorApp {
                     });
 
                     ui.add_space(6.0);
-                    let (response, painter) = ui.allocate_painter(egui::vec2(ui.available_width(), 120.0), egui::Sense::hover());
+                    let (response, painter) = ui.allocate_painter(Vec2::new(ui.available_width(), 100.0), egui::Sense::hover());
                     let rect = response.rect;
 
-                    painter.rect_filled(rect, 4.0, egui::Color32::from_rgb(15, 20, 32));
+                    painter.rect_filled(rect, 8.0, Color32::from_rgb(12, 16, 26));
 
                     if let Some(pat) = self.active_pattern {
                         match pat {
-                            "red" => { painter.rect_filled(rect, 4.0, egui::Color32::RED); }
-                            "green" => { painter.rect_filled(rect, 4.0, egui::Color32::GREEN); }
-                            "blue" => { painter.rect_filled(rect, 4.0, egui::Color32::BLUE); }
-                            "white" => { painter.rect_filled(rect, 4.0, egui::Color32::WHITE); }
+                            "red" => { painter.rect_filled(rect, 8.0, Color32::RED); }
+                            "green" => { painter.rect_filled(rect, 8.0, Color32::GREEN); }
+                            "blue" => { painter.rect_filled(rect, 8.0, Color32::BLUE); }
+                            "white" => { painter.rect_filled(rect, 8.0, Color32::WHITE); }
                             "grid" => {
                                 for x in (rect.min.x as i32..rect.max.x as i32).step_by(30) {
-                                    painter.line_segment([egui::pos2(x as f32, rect.min.y), egui::pos2(x as f32, rect.max.y)], (1.0, egui::Color32::GRAY));
+                                    painter.line_segment([Pos2::new(x as f32, rect.min.y), Pos2::new(x as f32, rect.max.y)], Stroke::new(1.0, Color32::GRAY));
                                 }
                                 for y in (rect.min.y as i32..rect.max.y as i32).step_by(30) {
-                                    painter.line_segment([egui::pos2(rect.min.x, y as f32), egui::pos2(rect.max.x, y as f32)], (1.0, egui::Color32::GRAY));
+                                    painter.line_segment([Pos2::new(rect.min.x, y as f32), Pos2::new(rect.max.x, y as f32)], Stroke::new(1.0, Color32::GRAY));
                                 }
                             }
                             "gradient" => {
@@ -416,10 +424,10 @@ impl eframe::App for AcerMonitorApp {
                                 for i in 0..steps {
                                     let v = (i as f32 / steps as f32 * 255.0) as u8;
                                     let r = egui::Rect::from_min_size(
-                                        egui::pos2(rect.min.x + i as f32 * step_w, rect.min.y),
-                                        egui::vec2(step_w, rect.height()),
+                                        Pos2::new(rect.min.x + i as f32 * step_w, rect.min.y),
+                                        Vec2::new(step_w, rect.height()),
                                     );
-                                    painter.rect_filled(r, 0.0, egui::Color32::from_gray(v));
+                                    painter.rect_filled(r, 0.0, Color32::from_gray(v));
                                 }
                             }
                             _ => {}
@@ -428,5 +436,33 @@ impl eframe::App for AcerMonitorApp {
                 });
             });
         });
+    }
+}
+
+fn render_preset_btn(
+    ui: &mut egui::Ui,
+    name: &str,
+    icon: &str,
+    preset_num: u8,
+    active_preset: &mut String,
+    tx: &Sender<DdcCommand>,
+    target: usize,
+) {
+    let is_active = active_preset == name;
+    let label_text = if is_active {
+        format!("{icon} {name} ✔")
+    } else {
+        format!("{icon} {name}")
+    };
+
+    let btn = if is_active {
+        egui::Button::new(egui::RichText::new(label_text).strong().color(Color32::BLACK)).fill(Color32::from_rgb(0, 229, 255))
+    } else {
+        egui::Button::new(label_text)
+    };
+
+    if ui.add(btn).clicked() {
+        *active_preset = name.to_string();
+        let _ = tx.send(DdcCommand::SetPreset(target, preset_num));
     }
 }
