@@ -258,7 +258,7 @@ impl eframe::App for AcerMonitorApp {
                         ui.heading("🎛️ Native Hardware OSD Presets");
                         ui.add_space(6.0);
 
-                        egui::Grid::new("presets_grid").num_columns(3).spacing([8.0, 8.0]).show(ui, |ui| {
+                        egui::Grid::new("presets_grid").num_columns(4).spacing([8.0, 8.0]).show(ui, |ui| {
                             if ui.button("⚖️ Standard").clicked() {
                                 self.active_preset = "Standard".into();
                                 let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 1));
@@ -266,6 +266,10 @@ impl eframe::App for AcerMonitorApp {
                             if ui.button("🌿 ECO Saver").clicked() {
                                 self.active_preset = "ECO".into();
                                 let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 2));
+                            }
+                            if ui.button("🎨 Graphics").clicked() {
+                                self.active_preset = "Graphics".into();
+                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 3));
                             }
                             if ui.button("⚡ HDR Mode").clicked() {
                                 self.active_preset = "HDR".into();
@@ -285,22 +289,13 @@ impl eframe::App for AcerMonitorApp {
                                 self.active_preset = "Sports".into();
                                 let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 7));
                             }
-                            ui.end_row();
-
-                            if ui.button("📚 Reading").clicked() {
-                                self.active_preset = "Reading".into();
-                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 3));
-                            }
-                            if ui.button("🎬 Movie").clicked() {
-                                self.active_preset = "Movie".into();
-                                let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 4));
-                            }
-                            if ui.button("🎨 User Mode").clicked() {
+                            if ui.button("👤 User Mode").clicked() {
                                 self.active_preset = "User".into();
                                 let _ = self.cmd_tx.send(DdcCommand::SetPreset(self.selected_target, 0));
                             }
                             ui.end_row();
                         });
+
 
                         ui.add_space(10.0);
 
