@@ -3,7 +3,9 @@ mod app;
 mod ddc;
 mod edid;
 mod energy;
+mod hdr;
 mod monitor;
+
 
 use app::AcerMonitorApp;
 use eframe::egui;

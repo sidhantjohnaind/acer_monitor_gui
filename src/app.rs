@@ -13,9 +13,11 @@ pub enum DdcCommand {
     SetBlackBoost(usize, u32),
     SetBlueLight(usize, u32),
     SetOverDrive(usize, u32),
+    SetHdrToggle(usize, bool),
     UnlockOSD(usize),
     PowerOff(usize),
 }
+
 
 pub struct AcerMonitorApp {
     brightness: u32,
@@ -75,6 +77,12 @@ impl Default for AcerMonitorApp {
                         DdcCommand::SetOverDrive(target, val) => {
                             let _ = exec_on_set(set, target, |m| crate::acer::overdrive(m, val));
                         }
+                        DdcCommand::SetHdrToggle(target, enable) => {
+                            let mode = if enable { 11 } else { 1 };
+                            let _ = exec_on_set(set, target, |m| crate::acer::display_mode(m, mode));
+                            crate::hdr::set_os_hdr(enable);
+                        }
+
                         DdcCommand::UnlockOSD(target) => {
                             let _ = exec_on_set(set, target, |m| {
                                 let _ = crate::acer::key_lock(m, false);
@@ -280,12 +288,46 @@ impl eframe::App for AcerMonitorApp {
                         // Real-Time Energy Calculator
                         ui.heading(egui::RichText::new("💡 Real-Time Energy Meter").strong().color(Color32::from_rgb(0, 230, 118)));
                         ui.add_space(4.0);
-                        let (wattage, _kwh, cost) = energy::calculate_power(self.brightness);
-                        ui.label(egui::RichText::new(format!("Live Power: {:.1} W   |   Est. Yearly Cost: ${:.2}/yr", wattage, cost)).strong().size(14.0).color(Color32::from_rgb(0, 230, 118)));
+                        let is_hdr = self.active_preset == "HDR Mode";
+                        let (wattage, _kwh, cost) = energy::calculate_power(self.brightness, is_hdr);
+                        let text = if is_hdr {
+                            format!("Live Power: {:.1} W (⚡ HDR Peak)   |   Est. Yearly Cost: ${:.2}/yr", wattage, cost)
+                        } else {
+                            format!("Live Power: {:.1} W   |   Est. Yearly Cost: ${:.2}/yr", wattage, cost)
+                        };
+                        ui.label(egui::RichText::new(text).strong().size(14.0).color(Color32::from_rgb(0, 230, 118)));
+
                     });
 
                     // Right Column: Presets, Input Source, Gaming Tuning
                     cols[1].group(|ui| {
+                        // Master Unified OS & Hardware HDR Switch
+                        ui.horizontal(|ui| {
+                            ui.heading(egui::RichText::new("⚡ Unified OS & Display HDR").strong().color(Color32::from_rgb(0, 229, 255)));
+                            let is_hdr = self.active_preset == "HDR Mode";
+                            let btn_label = if is_hdr { "⚡ OS + DISPLAY HDR: ON ✔" } else { "⚪ OS + DISPLAY HDR: OFF" };
+                            let btn_color = if is_hdr { Color32::from_rgb(0, 229, 255) } else { Color32::from_rgb(30, 42, 65) };
+                            let text_color = if is_hdr { Color32::BLACK } else { Color32::from_rgb(200, 210, 230) };
+
+                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                if ui.add(egui::Button::new(egui::RichText::new(btn_label).strong().color(text_color)).fill(btn_color)).clicked() {
+                                    if is_hdr {
+                                        self.active_preset = "Standard".to_string();
+                                        self.brightness = 80;
+                                        let _ = self.cmd_tx.send(DdcCommand::SetHdrToggle(self.selected_target, false));
+                                    } else {
+                                        self.active_preset = "HDR Mode".to_string();
+                                        self.brightness = 100;
+                                        let _ = self.cmd_tx.send(DdcCommand::SetHdrToggle(self.selected_target, true));
+                                    }
+                                }
+                            });
+                        });
+
+                        ui.add_space(8.0);
+                        ui.separator();
+                        ui.add_space(8.0);
+
                         ui.horizontal(|ui| {
                             ui.heading(egui::RichText::new("🎛️ Native Hardware Presets").strong().color(Color32::from_rgb(0, 229, 255)));
                             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -294,19 +336,21 @@ impl eframe::App for AcerMonitorApp {
                         });
                         ui.add_space(8.0);
 
+
                         egui::Grid::new("presets_grid").num_columns(4).spacing([8.0, 8.0]).show(ui, |ui| {
-                            render_preset_btn(ui, "User", "👤", 0, &mut self.active_preset, &self.cmd_tx, self.selected_target);
-                            render_preset_btn(ui, "Standard", "⚖️", 1, &mut self.active_preset, &self.cmd_tx, self.selected_target);
-                            render_preset_btn(ui, "ECO", "🌿", 2, &mut self.active_preset, &self.cmd_tx, self.selected_target);
-                            render_preset_btn(ui, "Graphics", "🎨", 3, &mut self.active_preset, &self.cmd_tx, self.selected_target);
+                            render_preset_btn(ui, "User", "👤", 0, &mut self.active_preset, &mut self.brightness, &self.cmd_tx, self.selected_target);
+                            render_preset_btn(ui, "Standard", "⚖️", 1, &mut self.active_preset, &mut self.brightness, &self.cmd_tx, self.selected_target);
+                            render_preset_btn(ui, "ECO", "🌿", 2, &mut self.active_preset, &mut self.brightness, &self.cmd_tx, self.selected_target);
+                            render_preset_btn(ui, "Graphics", "🎨", 3, &mut self.active_preset, &mut self.brightness, &self.cmd_tx, self.selected_target);
                             ui.end_row();
 
-                            render_preset_btn(ui, "Action", "🎯", 5, &mut self.active_preset, &self.cmd_tx, self.selected_target);
-                            render_preset_btn(ui, "Racing", "🏎️", 6, &mut self.active_preset, &self.cmd_tx, self.selected_target);
-                            render_preset_btn(ui, "Sports", "⚽", 7, &mut self.active_preset, &self.cmd_tx, self.selected_target);
-                            render_preset_btn(ui, "HDR Mode", "⚡", 11, &mut self.active_preset, &self.cmd_tx, self.selected_target);
+                            render_preset_btn(ui, "Action", "🎯", 5, &mut self.active_preset, &mut self.brightness, &self.cmd_tx, self.selected_target);
+                            render_preset_btn(ui, "Racing", "🏎️", 6, &mut self.active_preset, &mut self.brightness, &self.cmd_tx, self.selected_target);
+                            render_preset_btn(ui, "Sports", "⚽", 7, &mut self.active_preset, &mut self.brightness, &self.cmd_tx, self.selected_target);
+                            render_preset_btn(ui, "HDR Mode", "⚡", 11, &mut self.active_preset, &mut self.brightness, &self.cmd_tx, self.selected_target);
                             ui.end_row();
                         });
+
 
                         ui.add_space(14.0);
 
@@ -461,6 +505,7 @@ fn render_preset_btn(
     icon: &str,
     preset_num: u8,
     active_preset: &mut String,
+    brightness: &mut u32,
     tx: &Sender<DdcCommand>,
     target: usize,
 ) {
@@ -479,6 +524,10 @@ fn render_preset_btn(
 
     if ui.add(btn).clicked() {
         *active_preset = name.to_string();
+        if preset_num == 11 {
+            *brightness = 100;
+        }
         let _ = tx.send(DdcCommand::SetPreset(target, preset_num));
     }
 }
+
