@@ -1,6 +1,6 @@
 use std::process::Command;
 
-/// Toggles OS-level HDR (Windows OS HDR or Linux Wayland HDR)
+/// Toggles OS-level HDR (Windows OS HDR or Linux GNOME / KDE / Hyprland HDR)
 pub fn set_os_hdr(enable: bool) {
     #[cfg(windows)]
     {
@@ -18,10 +18,18 @@ pub fn set_os_hdr(enable: bool) {
 
     #[cfg(unix)]
     {
-        // Toggle Linux Wayland / KDE / Hyprland HDR
         if let Ok(desktop) = std::env::var("XDG_CURRENT_DESKTOP") {
             let d = desktop.to_lowercase();
-            if d.contains("hyprland") {
+            if d.contains("gnome") || d.contains("ubuntu") {
+                let arg = if enable {
+                    "['scale-monitor-framebuffer', 'hdr', 'variable-refresh-rate']"
+                } else {
+                    "['scale-monitor-framebuffer']"
+                };
+                let _ = Command::new("gsettings")
+                    .args(&["set", "org.gnome.mutter", "experimental-features", arg])
+                    .output();
+            } else if d.contains("hyprland") {
                 let val = if enable { "1" } else { "0" };
                 let _ = Command::new("hyprctl")
                     .args(&["keyword", "experimental:hdr", val])
